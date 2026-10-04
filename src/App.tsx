@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Package, Warehouse, ShoppingCart, RefreshCw } from 'lucide-react';
+import { Package, Warehouse, Bandage, ShoppingCart, RefreshCw } from 'lucide-react';
 import { supabase, type Medication, type MedicationInsert, totalQty } from '@/lib/supabase';
-import MagazzinoTab from '@/components/MagazzinoTab';
+import InventoryTab from '@/components/InventoryTab';
 import OrdiniTab from '@/components/OrdiniTab';
 
-type Tab = 'magazzino' | 'ordini';
+type Tab = 'farmacia' | 'presidi' | 'ordini';
 
 export default function App() {
   const [medications, setMedications] = useState<Medication[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<Tab>('magazzino');
+  const [activeTab, setActiveTab] = useState<Tab>('farmacia');
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchMedications = useCallback(async () => {
@@ -75,7 +75,8 @@ export default function App() {
   const lowStockCount = medications.filter((m) => totalQty(m) <= 5).length;
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
-    { id: 'magazzino', label: 'Magazzino', icon: <Warehouse className="h-4 w-4" /> },
+    { id: 'farmacia', label: 'Armadio Farmacia', icon: <Warehouse className="h-4 w-4" /> },
+    { id: 'presidi', label: 'Magazzino Presidi', icon: <Bandage className="h-4 w-4" /> },
     { id: 'ordini', label: 'Ordini', icon: <ShoppingCart className="h-4 w-4" />, badge: lowStockCount },
   ];
 
@@ -89,9 +90,7 @@ export default function App() {
                 <Package className="h-6 w-6" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-slate-900 leading-tight">
-                  Gestione Scorte RSA
-                </h1>
+                <h1 className="text-lg font-bold text-slate-900 leading-tight">Gestione scorte</h1>
                 <p className="text-xs text-slate-500">Le Residenze — Gestione condivisa</p>
               </div>
             </div>
@@ -102,12 +101,12 @@ export default function App() {
         </div>
 
         <nav className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="flex gap-1">
+          <div className="flex gap-1 overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'border-teal-600 text-teal-600'
                     : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -142,9 +141,21 @@ export default function App() {
           </div>
         ) : (
           <>
-            {activeTab === 'magazzino' && (
-              <MagazzinoTab
+            {activeTab === 'farmacia' && (
+              <InventoryTab
+                title="Armadio Farmacia"
                 medications={medications}
+                category="farmaco"
+                onAdd={handleAdd}
+                onDelete={handleDelete}
+                onUpdate={handleUpdate}
+              />
+            )}
+            {activeTab === 'presidi' && (
+              <InventoryTab
+                title="Magazzino Presidi"
+                medications={medications}
+                category="presidio"
                 onAdd={handleAdd}
                 onDelete={handleDelete}
                 onUpdate={handleUpdate}
