@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Minus, Plus, Trash2, X, EyeOff, Eye, AlertCircle } from 'lucide-react';
+import { Minus, Plus, Trash2, X, EyeOff, Eye, AlertCircle, Camera } from 'lucide-react';
 import {
   type Medication,
   type MedicationInsert,
@@ -7,6 +7,7 @@ import {
   ITEM_TYPES,
   totalQty,
 } from '@/lib/supabase';
+import ScannerModal from '@/components/ScannerModal';
 
 const SAFETY_THRESHOLD = 5;
 
@@ -31,6 +32,7 @@ export default function InventoryTab({ title, medications, category, onAdd, onDe
   const [search, setSearch] = useState('');
   const [showHidden, setShowHidden] = useState(false);
   const [confirmEditId, setConfirmEditId] = useState<string | null>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -72,36 +74,52 @@ export default function InventoryTab({ title, medications, category, onAdd, onDe
     setShowForm(false);
   };
 
+  const handleScannerConfirm = (name: string) => {
+    setSearch(name);
+  };
+
   const nameCol = category === 'farmaco' ? 'Principio Attivo' : 'Nome Presidio';
   const dosCol = category === 'farmaco' ? 'Dosaggio' : 'Formato';
 
   return (
     <div className="space-y-4">
-      {/* Search bar + toggles */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-        <div className="relative flex-1">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="input pl-10"
-            placeholder="Cerca per nome, dosaggio, tipo..."
-          />
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+      {/* Sticky search bar + scanner + toggles */}
+      <div className="sticky top-[105px] z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 bg-slate-50/95 backdrop-blur-md border-b border-slate-200">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="input pl-10"
+              placeholder="Cerca per nome, dosaggio, tipo..."
+            />
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          {category === 'farmaco' && (
+            <button
+              onClick={() => setScannerOpen(true)}
+              className="btn-secondary whitespace-nowrap"
+              title="Scanner farmaco"
+            >
+              <Camera className="h-4 w-4" />
+              <span className="hidden sm:inline">Scanner</span>
+            </button>
+          )}
+          <button
+            onClick={() => setShowHidden((v) => !v)}
+            className={`btn-secondary whitespace-nowrap ${showHidden ? '!bg-teal-50 !border-teal-300 !text-teal-700' : ''}`}
+          >
+            {showHidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+            <span className="hidden sm:inline">{showHidden ? 'Nascosti visibili' : 'Mostra nascosti'}</span>
+          </button>
+          <button onClick={() => setShowForm(true)} className="btn-primary whitespace-nowrap">
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Aggiungi</span>
+          </button>
         </div>
-        <button
-          onClick={() => setShowHidden((v) => !v)}
-          className={`btn-secondary whitespace-nowrap ${showHidden ? '!bg-teal-50 !border-teal-300 !text-teal-700' : ''}`}
-        >
-          {showHidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-          {showHidden ? 'Nascosti visibili' : 'Mostra nascosti'}
-        </button>
-        <button onClick={() => setShowForm(true)} className="btn-primary whitespace-nowrap">
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Aggiungi</span>
-        </button>
       </div>
 
       <div className="flex items-center justify-between">
@@ -115,20 +133,24 @@ export default function InventoryTab({ title, medications, category, onAdd, onDe
         </div>
       ) : (
         <div className="card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
+          {/* Dual-scroll container: max-height with both vertical and horizontal scroll */}
+          <div
+            className="overflow-auto"
+            style={{ maxHeight: 'calc(100vh - 280px)' }}
+          >
+            <table className="w-full text-sm border-collapse">
+              <thead className="sticky top-0 z-10">
                 <tr className="border-b border-slate-200 bg-slate-50 text-left">
-                  <th className="px-3 py-3 font-semibold text-slate-600 whitespace-nowrap">{nameCol}</th>
-                  <th className="px-3 py-3 font-semibold text-slate-600 whitespace-nowrap">{dosCol}</th>
-                  <th className="px-3 py-3 font-semibold text-slate-600 whitespace-nowrap">Tipo</th>
-                  <th className="px-3 py-3 font-semibold text-slate-600 whitespace-nowrap">Nome Commerciale</th>
-                  <th className="px-3 py-3 font-semibold text-slate-600 text-center whitespace-nowrap">PT</th>
-                  <th className="px-3 py-3 font-semibold text-slate-600 text-center whitespace-nowrap">1</th>
-                  <th className="px-3 py-3 font-semibold text-slate-600 text-center whitespace-nowrap">2</th>
-                  <th className="px-3 py-3 font-semibold text-slate-600 text-center whitespace-nowrap">3</th>
-                  <th className="px-3 py-3 font-semibold text-slate-600 text-center whitespace-nowrap">TOT</th>
-                  <th className="px-3 py-3 font-semibold text-slate-600 text-center whitespace-nowrap">Azioni</th>
+                  <th className="px-3 py-3 font-semibold text-slate-600 whitespace-nowrap min-w-[140px]">{nameCol}</th>
+                  <th className="px-3 py-3 font-semibold text-slate-600 whitespace-nowrap min-w-[90px]">{dosCol}</th>
+                  <th className="px-3 py-3 font-semibold text-slate-600 whitespace-nowrap min-w-[100px]">Tipo</th>
+                  <th className="px-3 py-3 font-semibold text-slate-600 whitespace-nowrap min-w-[140px]">Nome Commerciale</th>
+                  <th className="px-3 py-3 font-semibold text-slate-600 text-center whitespace-nowrap min-w-[60px]">PT</th>
+                  <th className="px-3 py-3 font-semibold text-slate-600 text-center whitespace-nowrap min-w-[60px]">1</th>
+                  <th className="px-3 py-3 font-semibold text-slate-600 text-center whitespace-nowrap min-w-[60px]">2</th>
+                  <th className="px-3 py-3 font-semibold text-slate-600 text-center whitespace-nowrap min-w-[60px]">3</th>
+                  <th className="px-3 py-3 font-semibold text-slate-600 text-center whitespace-nowrap min-w-[60px]">TOT</th>
+                  <th className="px-3 py-3 font-semibold text-slate-600 text-center whitespace-nowrap min-w-[100px]">Azioni</th>
                 </tr>
               </thead>
               <tbody>
@@ -322,11 +344,16 @@ export default function InventoryTab({ title, medications, category, onAdd, onDe
           </div>
         </div>
       )}
+
+      <ScannerModal
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onConfirm={handleScannerConfirm}
+      />
     </div>
   );
 }
 
-// Protected editable text — shows confirmation popup before allowing edit
 function ProtectedEditableText({
   value,
   onSave,
@@ -411,7 +438,6 @@ function ProtectedEditableText({
   );
 }
 
-// Inline editable text cell
 function EditableText({ value, onSave }: { value: string; onSave: (v: string) => void }) {
   const [editing, setEditing] = useState(false);
   const [temp, setTemp] = useState(value);
@@ -457,7 +483,6 @@ function EditableText({ value, onSave }: { value: string; onSave: (v: string) =>
   );
 }
 
-// Inline editable type dropdown
 function EditableType({ value, onSave }: { value: string; onSave: (v: string) => void }) {
   const [editing, setEditing] = useState(false);
   const selectRef = useRef<HTMLSelectElement>(null);
@@ -495,7 +520,6 @@ function EditableType({ value, onSave }: { value: string; onSave: (v: string) =>
   );
 }
 
-// Inline editable quantity cell with +/- buttons
 function EditableQty({ value, onSave }: { value: number; onSave: (v: number) => void }) {
   const [editing, setEditing] = useState(false);
   const [temp, setTemp] = useState(String(value));
