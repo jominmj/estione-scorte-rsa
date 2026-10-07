@@ -3,6 +3,7 @@ import { Package, Warehouse, Bandage, ShoppingCart, RefreshCw } from 'lucide-rea
 import { supabase, type Medication, type MedicationInsert, totalQty } from '@/lib/supabase';
 import InventoryTab from '@/components/InventoryTab';
 import OrdiniTab from '@/components/OrdiniTab';
+const suggerimentiNomi = ['ACETILCISTEINA', 'ACETILSALICILATO DI LISINA', 'ACIDO ACETILSALICILICO', 'ACIDO FOLICO', 'ACIDO URSODESOSSICOLICO', 'SEROQUEL', 'LASIX', 'AMOXICILLINA', 'PARACETAMOLO', 'RAMIPRIL', 'ATORVASTATINA', 'LORAZEPAM'];
 
 type Tab = 'farmacia' | 'presidi' | 'ordini';
 
@@ -40,14 +41,36 @@ export default function App() {
     setRefreshing(false);
   };
 
-  const handleAdd = async (med: MedicationInsert) => {
-    const { error } = await supabase.from('medications').insert(med);
-    if (error) {
-      setError("Errore durante l'aggiunta.");
-      return;
+const handleAdd = async (med: MedicationInsert) => {
+  setError(null);
+
+  // Controllo di sicurezza anti-duplicato (Punto 4: blocca anche se il farmaco è nascosto)
+  const esisteGia = medications.find(m => 
+    m.active_ingredient.trim().toUpperCase() === med.active_ingredient.trim().toUpperCase() &&
+    m.dosage.trim().toLowerCase() === med.dosage.trim().toLowerCase()
+  );
+
+  if (esisteGia) {
+    if (esisteGia.hidden) {
+      setError("ATTENZIONE DI SICUREZZA: Questo farmaco esiste già nel sistema ma è contrassegnato come NASCOSTO!");
+    } else {
+      setError(`BLOCCO DI SICUREZZA: Il farmaco "${med.active_ingredient.toUpperCase()} - ${med.dosage}" è già presente in inventario.`);
     }
-    await fetchMedications();
-  };
+    return;
+  }
+
+  // Se passa il controllo, lo salva su Supabase
+  const { data, error } = await supabase.from('medications').insert([med]).select();
+  if (error) {
+    setError("Errore durante l'aggiunta del farmaco.");
+    return;
+  }
+
+  if (data && data[0]) {
+    setMedications(prev => [data[0], ...prev]);
+  }
+};
+
 
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from('medications').delete().eq('id', id);
