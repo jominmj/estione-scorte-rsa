@@ -307,17 +307,26 @@ export default function InventoryTab({ title, medications, category, onAdd, onDe
               <div>
                 <label className="label">Tipo</label>
                 <select
-                  value={type}
-                  onChange={(e) => setType(e.target.value as ItemType)}
-                  className="input"
-                >
-                  {ITEM_TYPES.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                  <option value="Bustine">Bustine</option>
-<option value="Flacone">Flacone</option>
-<option value="Compresse effervescenti">Compresse effervescenti</option>
-<option value="Flaconi monodose">Flaconi monodose</option>
+  value={type}
+  onChange={(e) => setType(e.target.value as ItemType)}
+  className="input"
+>
+  <option value="Compresse">Compresse</option>
+  <option value="Collirio">Collirio</option>
+  <option value="Cerotti">Cerotti</option>
+  <option value="Puff">Puff</option>
+  <option value="Sciroppo">Sciroppo</option>
+  <option value="Gocce">Gocce</option>
+  <option value="Fiale">Fiale</option>
+  <option value="Crema">Crema</option>
+  <option value="Presidio">Presidio</option>
+  <option value="Bustine">Bustine</option>
+  <option value="Flacone">Flacone</option>
+  <option value="Compresse effervescenti">Compresse effervescenti</option>
+  <option value="Flaconi monodose">Flaconi monodose</option>
+  <option value="Altro">Altro</option>
+</select>
+
                 </select>
               </div>
               <div>
