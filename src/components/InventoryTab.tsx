@@ -314,6 +314,10 @@ export default function InventoryTab({ title, medications, category, onAdd, onDe
                   {ITEM_TYPES.map((t) => (
                     <option key={t} value={t}>{t}</option>
                   ))}
+                  <option value="Bustine">Bustine</option>
+<option value="Flacone">Flacone</option>
+<option value="Compresse effervescenti">Compresse effervescenti</option>
+<option value="Flaconi monodose">Flaconi monodose</option>
                 </select>
               </div>
               <div>
