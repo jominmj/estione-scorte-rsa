@@ -191,4 +191,3 @@ const handleAdd = async (med: MedicationInsert) => {
     </div>
   );
 }
-console.log("URL:", import.meta.env.VITE_SUPABASE_URL, "KEY:", import.meta.env.VITE_SUPABASE_ANON_KEY);
