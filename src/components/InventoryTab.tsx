@@ -327,10 +327,7 @@ export default function InventoryTab({ title, medications, category, onAdd, onDe
   <option value="Altro">Altro</option>
 </select>
 
-                </select>
-              </div>
-              <div>
-                <label className="label">Nome Commerciale (facoltativo, separa piu nomi con la virgola)</label>
+               
                 <input
                   type="text"
                   value={cn}
